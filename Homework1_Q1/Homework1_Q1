@@ -1,0 +1,89 @@
+from tabulate import tabulate
+
+def decode_line(content, line):
+    if line.startswith('INPUT'):
+        line = line.replace("INPUT(", "").replace(")", "")
+        content['inputs'].append(line)
+    elif line.startswith('OUTPUT'):
+        line = line.replace("OUTPUT(", "").replace(")", "")
+        content['outputs'].append(line)
+    else:
+        parts = line.split("=")
+        gate_output = parts[0].strip()
+        gate_info = parts[1].strip().replace("(", ",").replace(")", "").split(",")
+        gate_type = gate_info[0]
+        gate_inputs = gate_info[1:]
+        content['gates'].append({
+            'type': gate_type,
+            'output': gate_output,
+            'inputs': gate_inputs
+        })
+
+    return content
+
+
+def parse_file(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            content = {
+                'inputs': [],
+                'outputs': [],
+                'gates': []
+            }
+            for line in file:
+                decode_line(content, line.strip())
+
+            return content
+
+    except FileNotFoundError:
+        print(f"Error: Could not find the file '{file_path}'")
+        return None
+
+def formatted_print(content):
+    print("=====================")
+    print("   Circuit Summary   ")
+    print("=====================")
+    print()
+
+     # Inputs
+    input_table = []
+    for i, name in enumerate(content['inputs']):
+        input_table.append([i + 1, name])
+
+    print("Inputs")
+    print(tabulate(input_table, headers=["#", "Name"], tablefmt="grid"))
+    print()
+
+    # Outputs
+    output_table = []
+    for i, name in enumerate(content['outputs']):
+        output_table.append([i + 1, name])
+
+    print("Outputs")
+    print(tabulate(output_table, headers=["#", "Name"], tablefmt="grid"))
+    print()
+
+    # Gates
+    gate_table = []
+    for gate in content['gates']:
+        input_gates_list = ", ".join(gate['inputs'])
+        gate_type = gate['type']
+        if gate_type != "NOT":
+            gate_type = gate_type + " (" + str(len(gate['inputs'])) + ")"
+        gate_table.append([gate['output'], gate_type, input_gates_list])
+
+    print("Gates")
+    print(tabulate(gate_table, headers=["Output Node", "Gate Type", "Inputs"], tablefmt="grid"))
+
+
+
+def main():
+    file_content = parse_file('./input_circuit.txt')
+    if file_content is not None:
+        formatted_print(file_content)
+
+
+
+if __name__ == "__main__":
+
+    main()

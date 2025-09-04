@@ -1,13 +1,45 @@
 from tabulate import tabulate
 
+# Simulated content of 'input_circuit.txt' as a list of strings (due to Google Colab limitations)
+circuit_lines = [
+    "INPUT(a)",
+    "INPUT(b)",
+    "c' = NOT(c)",
+    "w = AND(a, b, c)",
+    "e = AND(a', b, c)",
+    "INPUT(c)",
+    "OUTPUT(w)",
+    "OUTPUT(x)",
+    "x = OR(d, e, f)",
+    "y = OR(g, h)",
+    "z = NOT(c)",
+    "d = AND(a, b')",
+    "OUTPUT(y)",
+    "OUTPUT(z)",
+    "a' = NOT(a)",
+    "b' = NOT(b)",
+    "f = AND(a, b, c')",
+    "g = AND(b', c)",
+    "h = AND(b, c')"
+]
+
+# Decode each line of the circuit "file"
 def decode_line(content, line):
+
+    # Input line
     if line.startswith('INPUT'):
         line = line.replace("INPUT(", "").replace(")", "")
         content['inputs'].append(line)
+    
+    # Output line
     elif line.startswith('OUTPUT'):
         line = line.replace("OUTPUT(", "").replace(")", "")
         content['outputs'].append(line)
+
+    # Gate line
     else:
+
+        # Separate the gate output from the gate type and inputs
         parts = line.split("=")
         gate_output = parts[0].strip()
         gate_info = parts[1].strip().replace("(", ",").replace(")", "").split(",")
@@ -22,30 +54,55 @@ def decode_line(content, line):
     return content
 
 
-def parse_file(file_path):
-    try:
-        with open(file_path, 'r') as file:
-            content = {
-                'inputs': [],
-                'outputs': [],
-                'gates': []
-            }
-            for line in file:
-                decode_line(content, line.strip())
+# Read the circuit list and return the content dictionary
+def read_circuit_lines():
 
-            return content
+    # Initialize content dictionary
+    content = {
+        'inputs': [],
+        'outputs': [],
+        'gates': []
+    }
 
-    except FileNotFoundError:
-        print(f"Error: Could not find the file '{file_path}'")
-        return None
+    # Simulate reading from a file by using the predefined list of lines (due to Google Colab limitations)
+    for line in circuit_lines:
+        decode_line(content, line.strip())
 
+    return content
+
+
+# Function to read the circuit lines from a file (input_circuit.txt) - not used in Google Colab
+# def read_circuit_lines(file_path):
+#     try:
+#         with open(file_path, 'r') as file:
+
+#             # Initialize content dictionary
+#             content = {
+#                 'inputs': [],
+#                 'outputs': [],
+#                 'gates': []
+#             }
+
+#             # Read and decode each line
+#             for line in file:
+#                 decode_line(content, line.strip())
+
+#             return content
+
+#     except FileNotFoundError:
+#         print(f"Error: Could not find the file '{file_path}'")
+#         return None
+
+
+
+# Print the data read from the circuit "file" in a formatted way
 def formatted_print(content):
     print("=====================")
     print("   Circuit Summary   ")
     print("=====================")
     print()
 
-     # Inputs
+    # Inputs
     input_table = []
     for i, name in enumerate(content['inputs']):
         input_table.append([i + 1, name])
@@ -76,14 +133,13 @@ def formatted_print(content):
     print(tabulate(gate_table, headers=["Output Node", "Gate Type", "Inputs"], tablefmt="grid"))
 
 
-
+# Main function
 def main():
-    file_content = parse_file('./input_circuit.txt')
-    if file_content is not None:
-        formatted_print(file_content)
+    file_content = read_circuit_lines()
+    formatted_print(file_content)
 
 
-
+# Run the main function
 if __name__ == "__main__":
 
     main()

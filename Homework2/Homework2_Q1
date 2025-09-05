@@ -1,0 +1,187 @@
+from tabulate import tabulate
+
+# Simulated content of 'input_circuit.txt' as a list of strings (due to Google Colab limitations)
+circuit_lines = [
+    "INPUT(a)",
+    "INPUT(b)",
+    "c' = NOT(c)",
+    "w = AND(a, b, c)",
+    "e = AND(a', b, c)",
+    "INPUT(c)",
+    "OUTPUT(w)",
+    "OUTPUT(x)",
+    "x = OR(d, e, f)",
+    "y = OR(g, h)",
+    "z = NOT(c)",
+    "d = AND(a, b')",
+    "OUTPUT(y)",
+    "OUTPUT(z)",
+    "a' = NOT(a)",
+    "b' = NOT(b)",
+    "f = AND(a, b, c')",
+    "g = AND(b', c)",
+    "h = AND(b, c')"
+]
+
+# Decode each line of the circuit "file"
+def decode_line(content, line):
+
+    # Input line
+    if line.startswith('INPUT'):
+        line = line.replace("INPUT(", "").replace(")", "")
+        content['inputs'].append(line)
+    
+    # Output line
+    elif line.startswith('OUTPUT'):
+        line = line.replace("OUTPUT(", "").replace(")", "")
+        content['outputs'].append(line)
+
+    # Gate line
+    else:
+
+        # Separate the gate output from the gate type and inputs
+        parts = line.split("=")
+        gate_output = parts[0].strip()
+        gate_info = parts[1].strip().replace("(", ",").replace(")", "").split(",")
+        gate_type = gate_info[0]
+        gate_inputs = [x.strip() for x in gate_info[1:]]
+        content['gates'].append({
+            'type': gate_type,
+            'output': gate_output,
+            'inputs': gate_inputs,
+            'level': -1
+        })
+
+    return content
+
+
+# Read the circuit list and return the content dictionary
+def read_circuit_lines():
+
+    # Initialize content dictionary
+    content = {
+        'inputs': [],
+        'outputs': [],
+        'gates': []
+    }
+
+    # Simulate reading from a file by using the predefined list of lines (due to Google Colab limitations)
+    for line in circuit_lines:
+        decode_line(content, line.strip())
+
+    return content
+
+
+# Function to read the circuit lines from a file (input_circuit.txt) - not used in Google Colab
+# def read_circuit_lines(file_path):
+#     try:
+#         with open(file_path, 'r') as file:
+
+#             # Initialize content dictionary
+#             content = {
+#                 'inputs': [],
+#                 'outputs': [],
+#                 'gates': []
+#             }
+
+#             # Read and decode each line
+#             for line in file:
+#                 decode_line(content, line.strip())
+
+#             return content
+
+#     except FileNotFoundError:
+#         print(f"Error: Could not find the file '{file_path}'")
+#         return None
+
+
+
+# Print the data read from the circuit "file" in a formatted way
+def formatted_print(content):
+    print("=====================")
+    print("   Circuit Summary   ")
+    print("=====================")
+    print()
+
+    # Inputs
+    input_table = []
+    for i, name in enumerate(content['inputs']):
+        input_table.append([i + 1, name])
+
+    print("Inputs")
+    print(tabulate(input_table, headers=["#", "Name"], tablefmt="grid"))
+    print()
+
+    # Outputs
+    output_table = []
+    for i, name in enumerate(content['outputs']):
+        output_table.append([i + 1, name])
+
+    print("Outputs")
+    print(tabulate(output_table, headers=["#", "Name"], tablefmt="grid"))
+    print()
+
+    # Gates
+    gate_table = []
+    for gate in content['gates']:
+        input_gates_list = ", ".join(gate['inputs'])
+        gate_type = gate['type']
+        if gate_type != "NOT":
+            gate_type = gate_type + " (" + str(len(gate['inputs'])) + ")"
+        gate_table.append([gate['output'], gate_type, input_gates_list, gate['level']])
+
+    print("Gates")
+    print(tabulate(gate_table, headers=["Output Node", "Gate Type", "Inputs", "Level"], tablefmt="grid"))
+
+def get_gate_from_name(content, name):
+    for gate in content['gates']:
+        if gate['output'] == name:
+            return gate
+    return None
+
+def find_gates_levels(content):
+
+    changed = True
+    level = 0
+
+
+    while (changed == True):
+        changed = False
+        level += 1
+        updateList = []
+
+        for gate in content['gates']:
+
+            if gate['level'] == -1:
+
+                inputs_done = True
+
+                for gate_input in gate['inputs']:
+
+                    if gate_input not in content['inputs']:
+                        if get_gate_from_name(content, gate_input)['level'] == -1:
+                            inputs_done = False
+                            break
+
+                if inputs_done:
+                    updateList.append(gate)
+                    changed = True
+
+        for gate in updateList:
+            gate['level'] = level
+
+    return content
+
+# Main function
+def main():
+    file_content = read_circuit_lines()
+
+    file_content = find_gates_levels(file_content)
+
+    formatted_print(file_content)
+
+
+# Run the main function
+if __name__ == "__main__":
+
+    main()
